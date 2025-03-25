@@ -49,7 +49,6 @@ def get_chat_response(mapping, request):
     {request}
     
     From the request, generate 3 useful Elasticsearch queries. Return only JSON format with query_name and Elasticsearch query_body. Each of them should be on a new line. 
-    If you are doing aggregations, size: 0
     
     Below is the index mapping you can use to query on:
     {mapping}

@@ -78,7 +78,7 @@ def createTableInStreamlit(st, results):
             st.markdown("---")
 
     # Check if we have hits
-    if "hits" in results and results["hits"]["hits"]:
+    if "hits" in results and isinstance(results["hits"]["hits"], list):
         st.subheader("Search Results")
         hits = results["hits"]["hits"]
         extracted_data = [hit["_source"] for hit in hits]
