@@ -32,6 +32,28 @@ es = Elasticsearch(
 
 mapping = es.indices.get_mapping(index=config["index_name"])
 
+
+# Sidebar with table that follows as you scroll
+with st.sidebar:
+    st.header("Mapping")
+    
+    # Sample data
+    properties = mapping[config["index_name"]]["mappings"]["properties"]
+    
+    field_data = []
+    for field_name, field_info in properties.items():
+        field_type = field_info.get("type", "unknown")
+        field_data.append({
+            "Field Name": field_name,
+            "Data Type": field_type,
+        })
+    
+    # Convert to DataFrame and display as a styled table
+    df = pd.DataFrame(field_data)
+    
+    # Display the table
+    st.dataframe(df)
+
 # Initialize session state for saved widgets
 if "saved_widgets" not in st.session_state:
     if os.path.exists(widgetJsonPath):
@@ -164,7 +186,7 @@ def load_saved_widgets():
 
 
 def main():
-    st.title("Car Analytics Dashboard")
+    st.title(config["index_name"] + " Analytics Dashboard")
     st.subheader("Elasticsearch-powered insights with OpenAI assistance")
 
     # Display saved widgets at the top
