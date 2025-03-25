@@ -31,10 +31,13 @@ def createTableInStreamlit(st, results):
                                 if "value" in sub_value:
                                     bucket_item[f"{sub_key}"] = sub_value["value"]
                                 elif "buckets" in sub_value:
+                                    #TODO: recursive? Right now we only accept 2 layers of aggregation
+                                    
                                     # Nested buckets - we'll simplify by showing count
-                                    bucket_item[f"{sub_key}_count"] = len(
-                                        sub_value["buckets"]
-                                    )
+                                    # bucket_item[f"{sub_key}_count"] = len(
+                                    #     sub_value["buckets"]
+                                    # )
+                                    bucket_item[f"{sub_key}"] = [item["key"] for item in sub_value["buckets"]]
 
                         bucket_data.append(bucket_item)
 
