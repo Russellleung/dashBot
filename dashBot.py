@@ -20,7 +20,7 @@ config = dotenv_values(".env")
 API_KEY = config["API_KEY"]
 API_URL = config["API_URL"]
 headers = {"Authorization": f"Bearer {API_KEY}", "Content-Type": "application/json"}
-
+widgetJsonPath = config["index_name"] + "_saved_widgets.json"
 es = Elasticsearch(
     hosts=["https://localhost:9200"],
     basic_auth=(
@@ -34,8 +34,8 @@ mapping = es.indices.get_mapping(index=config["index_name"])
 
 # Initialize session state for saved widgets
 if "saved_widgets" not in st.session_state:
-    if os.path.exists("saved_widgets.json"):
-        with open("saved_widgets.json", "r") as f:
+    if os.path.exists(widgetJsonPath):
+        with open(widgetJsonPath, "r") as f:
             st.session_state.saved_widgets = json.load(f)
     else:
         st.session_state.saved_widgets = []
@@ -129,7 +129,7 @@ def save_widget(query_name, query_body):
     st.session_state.saved_widgets.append(widget)
 
     # Save to file
-    with open("saved_widgets.json", "w") as f:
+    with open(widgetJsonPath, "w") as f:
         json.dump(st.session_state.saved_widgets, f)
 
     st.success(f"Widget '{query_name}' saved successfully!")
@@ -137,8 +137,8 @@ def save_widget(query_name, query_body):
 
 def load_saved_widgets():
     """Load saved widgets from the JSON file"""
-    if os.path.exists("saved_widgets.json"):
-        with open("saved_widgets.json", "r") as f:
+    if os.path.exists(widgetJsonPath):
+        with open(widgetJsonPath, "r") as f:
             return json.load(f)
     return []
 
@@ -179,7 +179,7 @@ def main():
                 # Option to remove from saved widgets
                 if st.button(f"Remove Widget", key=f"remove_{i}"):
                     st.session_state.saved_widgets.pop(i)
-                    with open("saved_widgets.json", "w") as f:
+                    with open(widgetJsonPath, "w") as f:
                         json.dump(st.session_state.saved_widgets, f)
                     st.rerun()
 

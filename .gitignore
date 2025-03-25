@@ -2,6 +2,5 @@ dashbott
 venv
 __pycache__
 error-start-local.log
-saved_widgets.json
-
 .env
+*saved_widgets.json
