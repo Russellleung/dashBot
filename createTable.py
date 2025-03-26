@@ -5,7 +5,7 @@ def createTableInStreamlit(st, results):
 
     # Check if we have aggregations
     if "aggregations" in results:
-        st.subheader("Aggregation Results")
+        # st.write("Aggregation Results")
 
         for agg_name, agg_data in results["aggregations"].items():
             st.write(f"**{agg_name}**")
@@ -78,11 +78,12 @@ def createTableInStreamlit(st, results):
                 # Other aggregation types
                 st.json(agg_data)
 
-            st.markdown("---")
+            # st.markdown("---")
 
     # Check if we have hits
-    if "hits" in results and isinstance(results["hits"]["hits"], list):
-        st.subheader("Search Results")
+    if "hits" in results and results["hits"]["hits"]:    
+        # TODO decide isinstance(results["hits"]["hits"], list)    
+        # st.write("Search Results")
         hits = results["hits"]["hits"]
         extracted_data = [hit["_source"] for hit in hits]
 
@@ -90,7 +91,7 @@ def createTableInStreamlit(st, results):
         df = pd.DataFrame(extracted_data)
 
         # Display the DataFrame as a table
-        st.write(f"Found {results['hits']['total']['value']} documents:")
+        # st.write(f"Found {results['hits']['total']['value']} documents:")
         st.dataframe(df)
 
 

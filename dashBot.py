@@ -185,11 +185,56 @@ def load_saved_widgets():
 #     # st.table(df)
 
 
-def main():
-    st.title(config["index_name"] + " Analytics Dashboard")
-    st.subheader("Elasticsearch-powered insights with OpenAI assistance")
+def displayDashboard(st):
+    if st.session_state.saved_widgets:
+        st.header("Saved Widgets")
+        
+        # Define number of columns in your grid
+        num_cols = 2  # Adjust based on your preference
+        grid_cols = st.columns(num_cols)
 
-    # Display saved widgets at the top
+        
+        for i, widget in enumerate(st.session_state.saved_widgets):
+            # Determine which column to place this widget in
+            col_idx = i % num_cols
+            
+            with grid_cols[col_idx]:
+            # Create a row for the title and buttons
+                title_col, view_btn_col, remove_btn_col = st.columns([4, 1, 1])
+                
+                # Widget name and save date on the left
+                with title_col:
+                    st.caption(f"{widget['name']}")
+                    
+                    
+                @st.dialog("Query")
+                def show_my_dialog():
+                    st.code(json.dumps(widget["query"], indent=2), language="json")
+                                    
+                # View Query button with icon
+                with view_btn_col:
+                    if st.button("🔍", key=f"view_{i}", help="View Query"):
+                        st.session_state[f"show_query_{i}"] = True
+                        show_my_dialog()
+                
+                # Remove button with icon
+                with remove_btn_col:
+                    if st.button("🗑️", key=f"remove_{i}", help="Remove Widget"):
+                        st.session_state.saved_widgets.pop(i)
+                        with open(widgetJsonPath, "w") as f:
+                            json.dump(st.session_state.saved_widgets, f)
+                        st.rerun()
+                
+                # Execute query and display results directly below the title row
+                results = execute_query(widget["query"])
+                createTableInStreamlit(st, results)
+                
+                st.markdown("---")
+                
+                
+                
+def displayWidgetsInDropdown(st):
+# Display saved widgets at the top
     if st.session_state.saved_widgets:
         st.header("Saved Widgets")
         for i, widget in enumerate(st.session_state.saved_widgets):
@@ -203,7 +248,16 @@ def main():
                     st.session_state.saved_widgets.pop(i)
                     with open(widgetJsonPath, "w") as f:
                         json.dump(st.session_state.saved_widgets, f)
-                    st.rerun()
+                    st.rerun()                
+                
+                
+                
+                
+def main():
+    st.title(config["index_name"] + " Analytics Dashboard")
+    st.subheader("Elasticsearch-powered insights with OpenAI assistance")
+    
+    displayDashboard(st)
 
     # Generate top 5 queries section
     st.header("Top 5 Suggested Queries")
