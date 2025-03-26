@@ -1,9 +1,8 @@
 import pandas as pd
 from elasticsearch import Elasticsearch, helpers
+from mappingFactory import MappingFactory
 import numpy as np
 from dotenv import dotenv_values
-from createMappings import manualMappings,additionalColumn
-
 
 from dateutil import parser
 strtime = '2009-03-08T00:27:31.807Z'
@@ -14,6 +13,10 @@ config = dotenv_values(".env")
 csv_file_path = config["csv_file_path"]
 
 index_name = config["index_name"]
+
+
+mappingFactory = MappingFactory()
+mappy = mappingFactory.getMappy(index_name)
 
 # Connect to Elasticsearch
 es = Elasticsearch(
@@ -47,12 +50,12 @@ def upload_csv_to_elasticsearch(csv_file, index_name):
     # Create index with mapping
     
     if not es.indices.exists(index=index_name):
-        es.indices.create(index=index_name,body=manualMappings())
+        es.indices.create(index=index_name,body=mappy.manualMappings())
     
     # Convert DataFrame to list of dicts
     # Replace NaN with None to avoid issues
     df = df.replace({np.nan: None})
-    additionalColumn(df)
+    mappy.additionalColumn(df)
     print(df)
     documents = df.to_dict('records')
     # print(documents)
