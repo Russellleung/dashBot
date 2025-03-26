@@ -9,18 +9,14 @@ import pandas as pd
 from createTable import createTableInStreamlit
 
 
-# Configure API keys and connections
-# openai.api_key = st.secrets["OPENAI_API_KEY"]  # Store in Streamlit secrets
-
-
 config = dotenv_values(".env")
 
-
+dir = config["path"]
 # set up deepseek
 API_KEY = config["API_KEY"]
 API_URL = config["API_URL"]
 headers = {"Authorization": f"Bearer {API_KEY}", "Content-Type": "application/json"}
-widgetJsonPath = config["index_name"] + "_saved_widgets.json"
+widgetJsonPath = dir + "/" + config["index_name"] + "_saved_widgets.json"
 es = Elasticsearch(
     hosts=["https://localhost:9200"],
     basic_auth=(
@@ -255,14 +251,14 @@ def displayWidgetsInDropdown(st):
                 
 def main():
     st.title(config["index_name"] + " Analytics Dashboard")
-    st.subheader("Elasticsearch-powered insights with OpenAI assistance")
+    st.subheader("Elasticsearch-powered insights with smartRussell assistance")
     
     displayDashboard(st)
 
     # Generate top 5 queries section
     st.header("Top 5 Suggested Queries")
     if st.button("Generate Top Queries"):
-        with st.spinner("Generating queries with OpenAI..."):
+        with st.spinner("Generating queries with smartRussell..."):
             top_queries = get_chat_response(
                 mapping, "Suggest the top queries that will be useful for the data"
             )
