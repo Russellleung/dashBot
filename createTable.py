@@ -8,7 +8,7 @@ def createTableInStreamlit(st, results):
         # st.write("Aggregation Results")
 
         for agg_name, agg_data in results["aggregations"].items():
-            st.write(f"**{agg_name}**")
+            # st.write(f"**{agg_name}**")
 
             # Handle different aggregation types
             if "buckets" in agg_data:
