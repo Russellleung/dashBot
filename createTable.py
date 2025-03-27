@@ -1,84 +1,121 @@
 import pandas as pd
 
 
+def process_nested_aggs(agg_data, current_path=None, current_row=None):
+    """
+    Recursively process nested aggregations and create rows for each combination.
+    
+    Args:
+        agg_data: The current aggregation data to process
+        current_path: List tracking the current path in the aggregation hierarchy
+        current_row: Dictionary representing the current row being built
+        
+    Returns:
+        List of dictionaries, each representing a complete row
+    """
+    if current_path is None:
+        current_path = []
+    if current_row is None:
+        current_row = {}
+        
+    result_rows = []
+    
+    # Handle bucket aggregations
+    if "buckets" in agg_data:
+        buckets = agg_data["buckets"]
+        
+        # Get the current aggregation name
+        if current_path:
+            agg_name = current_path[-1]
+        else:
+            # Fallback name if path is empty (shouldn't happen in practice)
+            agg_name = "bucket"
+            
+        if isinstance(buckets, list):
+            # Process each bucket
+            for bucket in buckets:
+                # Create a new row with the current bucket's data
+                new_row = current_row.copy()
+                new_row[agg_name] = bucket.get("key", "")
+                new_row[f"{agg_name}_count"] = bucket.get("doc_count", 0)
+                
+                # Check for sub-aggregations
+                has_sub_aggs = False
+                for sub_key, sub_value in bucket.items():
+                    if sub_key not in ["key", "doc_count", "key_as_string"]:
+                        has_sub_aggs = True
+                        # Recursively process the sub-aggregation
+                        sub_rows = process_nested_aggs(
+                            sub_value, 
+                            current_path + [sub_key], 
+                            new_row.copy()
+                        )
+                        result_rows.extend(sub_rows)
+                
+                # If no sub-aggregations, add this row as a leaf node
+                if not has_sub_aggs:
+                    result_rows.append(new_row)
+        
+        elif isinstance(buckets, dict):
+            # Handle composite or filters aggregation
+            for key, bucket in buckets.items():
+                new_row = current_row.copy()
+                new_row[agg_name] = key
+                new_row[f"{agg_name}_count"] = bucket.get("doc_count", 0)
+                
+                # Check for sub-aggregations
+                has_sub_aggs = False
+                for sub_key, sub_value in bucket.items():
+                    if sub_key not in ["doc_count"]:
+                        has_sub_aggs = True
+                        sub_rows = process_nested_aggs(
+                            sub_value,
+                            current_path + [sub_key],
+                            new_row.copy()
+                        )
+                        result_rows.extend(sub_rows)
+                
+                if not has_sub_aggs:
+                    result_rows.append(new_row)
+    
+    # Handle metric aggregations
+    elif "value" in agg_data:
+        agg_name = current_path[-1] if current_path else "value"
+        new_row = current_row.copy()
+        new_row[agg_name] = agg_data["value"]
+        result_rows.append(new_row)
+    
+    # Handle other aggregation types
+    elif "values" in agg_data:
+        agg_name = current_path[-1] if current_path else "percentile"
+        for percentile, value in agg_data["values"].items():
+            new_row = current_row.copy()
+            new_row[f"{agg_name}_percentile"] = percentile
+            new_row[f"{agg_name}_value"] = value
+            result_rows.append(new_row)
+    
+    # If we didn't match any specific aggregation type but have a row, return it
+    elif current_row:
+        result_rows.append(current_row)
+        
+    return result_rows
+
+
 def createTableInStreamlit(st, results):
-
-    # Check if we have aggregations
+    """Display Elasticsearch aggregation results in Streamlit."""
+    
     if "aggregations" in results:
-        # st.write("Aggregation Results")
-
         for agg_name, agg_data in results["aggregations"].items():
-            # st.write(f"**{agg_name}**")
-
-            # Handle different aggregation types
-            if "buckets" in agg_data:
-                # Bucket aggregation (terms, date_histogram, etc.)
-                buckets = agg_data["buckets"]
-
-                # Convert buckets to DataFrame
-                if isinstance(buckets, list):
-                    # Standard buckets list
-                    bucket_data = []
-                    for bucket in buckets:
-                        bucket_item = {
-                            agg_name: bucket["key"],
-                            "doc_count": bucket["doc_count"],
-                        }
-
-                        # Add any sub-aggregations
-                        for sub_key, sub_value in bucket.items():
-                            if sub_key not in ["key", "doc_count", "key_as_string"]:
-                                if "value" in sub_value:
-                                    bucket_item[f"{sub_key}"] = sub_value["value"]
-                                elif "buckets" in sub_value:
-                                    #TODO: recursive? Right now we only accept 2 layers of aggregation
-                                    
-                                    # Nested buckets - we'll simplify by showing count
-                                    # bucket_item[f"{sub_key}_count"] = len(
-                                    #     sub_value["buckets"]
-                                    # )
-                                    bucket_item[f"{sub_key}"] = [item["key"] for item in sub_value["buckets"]]
-
-                        bucket_data.append(bucket_item)
-
-                    bucket_df = pd.DataFrame(bucket_data)
-                    st.dataframe(bucket_df)
-
-                elif isinstance(buckets, dict):
-                    # Composite aggregation or filters
-                    bucket_data = []
-                    for key, bucket in buckets.items():
-                        bucket_item = {"key": key, "doc_count": bucket["doc_count"]}
-                        bucket_data.append(bucket_item)
-
-                    bucket_df = pd.DataFrame(bucket_data)
-                    st.dataframe(bucket_df)
-
-            elif "value" in agg_data:
-                # Metric aggregation (avg, sum, min, max, etc.)
-                st.write(f"Value: {agg_data['value']}")
-
-            elif "values" in agg_data:
-                # Percentiles aggregation
-                st.write("Percentiles:")
-                percentiles_df = pd.DataFrame(
-                    {
-                        "Percentile": list(agg_data["values"].keys()),
-                        "Value": list(agg_data["values"].values()),
-                    }
-                )
-                st.dataframe(percentiles_df)
-
-            elif all(key in agg_data for key in ["count", "min", "max", "avg", "sum"]):
-                # Stats aggregation
-                stats_df = pd.DataFrame([agg_data])
-                st.dataframe(stats_df)
-
+            st.subheader(f"Aggregation: {agg_name}")
+            
+            # Process this aggregation and all its nested aggregations
+            rows = process_nested_aggs(agg_data, [agg_name])
+            
+            if rows:
+                df = pd.DataFrame(rows)
+                st.dataframe(df)
             else:
-                # Other aggregation types
-                st.json(agg_data)
-
-            # st.markdown("---")
+                st.write("No data in aggregation")
 
     # Check if we have hits
     if "hits" in results and results["hits"]["hits"]:    
