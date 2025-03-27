@@ -36,7 +36,7 @@ def process_nested_aggs(agg_data, current_path=None, current_row=None):
             for bucket in buckets:
                 # Create a new row with the current bucket's data
                 new_row = current_row.copy()
-                new_row[agg_name] = bucket.get("key", "")
+                new_row[agg_name] = bucket.get("key_as_string","") if "key_as_string" in bucket else bucket.get("key", "")
                 new_row[f"{agg_name}_count"] = bucket.get("doc_count", 0)
                 
                 # Check for sub-aggregations
@@ -106,7 +106,7 @@ def createTableInStreamlit(st, results):
     
     if "aggregations" in results:
         for agg_name, agg_data in results["aggregations"].items():
-            st.subheader(f"Aggregation: {agg_name}")
+            # st.subheader(f"Aggregation: {agg_name}")
             
             # Process this aggregation and all its nested aggregations
             rows = process_nested_aggs(agg_data, [agg_name])

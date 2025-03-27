@@ -31,22 +31,6 @@ def upload_csv_to_elasticsearch(csv_file, index_name):
     df = pd.read_csv(csv_file)
     print(df)
     
-    # Try to detect and convert date columns
-    for col in df.columns:
-        # Handle numeric columns that might be epoch timestamps
-        if pd.api.types.is_numeric_dtype(df[col]):
-            # Check if values are in epoch millisecond range
-            if df[col].min() > 1000000000000 and df[col].max() < 9999999999999:
-                sample = df[col].dropna().sample(min(100, len(df[col].dropna())))
-                converted = pd.to_datetime(sample, unit='ms', errors='coerce')
-                if converted.notna().mean() >= 0.9:  # 90% success rate
-                    df[col] = pd.to_datetime(df[col])
-                    print(f"Converted column '{col}' from epoch milliseconds to datetime")
-    
-    # # Generate mapping from DataFrame
-    # mapping = infer_mapping_from_dataframe(df)
-    # print(mapping)
-    
     # Create index with mapping
     
     if not es.indices.exists(index=index_name):
