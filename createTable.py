@@ -36,24 +36,41 @@ def process_nested_aggs(agg_data, current_path=None, current_row=None):
             for bucket in buckets:
                 # Create a new row with the current bucket's data
                 new_row = current_row.copy()
-                new_row[agg_name] = bucket.get("key_as_string","") if "key_as_string" in bucket else bucket.get("key", "")
+                new_row[agg_name] = bucket.get("key_as_string", "") if "key_as_string" in bucket else bucket.get("key", "")
                 new_row[f"{agg_name}_count"] = bucket.get("doc_count", 0)
                 
-                # Check for sub-aggregations
-                has_sub_aggs = False
+                # Collect all metric aggregations at this level
+                metric_values = {}
+                sub_agg_keys = []
+                
                 for sub_key, sub_value in bucket.items():
                     if sub_key not in ["key", "doc_count", "key_as_string"]:
-                        has_sub_aggs = True
-                        # Recursively process the sub-aggregation
+                        if "value" in sub_value:
+                            # This is a metric aggregation - add to current row
+                            metric_values[sub_key] = sub_value["value"]
+                        elif "values" in sub_value:
+                            # Handle percentiles
+                            for percentile, value in sub_value["values"].items():
+                                metric_values[f"{sub_key}_{percentile}"] = value
+                        elif "buckets" in sub_value:
+                            # This is a sub-bucket aggregation - process recursively later
+                            sub_agg_keys.append(sub_key)
+                
+                # Add all metrics to the row
+                new_row.update(metric_values)
+                
+                if sub_agg_keys:
+                    # Process sub-bucket aggregations
+                    for sub_key in sub_agg_keys:
+                        sub_value = bucket[sub_key]
                         sub_rows = process_nested_aggs(
-                            sub_value, 
-                            current_path + [sub_key], 
-                            new_row.copy()
+                            sub_value,
+                            current_path + [sub_key],
+                            new_row.copy()  # Pass the row with metrics already added
                         )
                         result_rows.extend(sub_rows)
-                
-                # If no sub-aggregations, add this row as a leaf node
-                if not has_sub_aggs:
+                else:
+                    # No sub-buckets, just add this row
                     result_rows.append(new_row)
         
         elif isinstance(buckets, dict):
@@ -63,36 +80,54 @@ def process_nested_aggs(agg_data, current_path=None, current_row=None):
                 new_row[agg_name] = key
                 new_row[f"{agg_name}_count"] = bucket.get("doc_count", 0)
                 
-                # Check for sub-aggregations
-                has_sub_aggs = False
+                # Collect all metric aggregations at this level
+                metric_values = {}
+                sub_agg_keys = []
+                
                 for sub_key, sub_value in bucket.items():
                     if sub_key not in ["doc_count"]:
-                        has_sub_aggs = True
+                        if "value" in sub_value:
+                            # This is a metric aggregation
+                            metric_values[sub_key] = sub_value["value"]
+                        elif "values" in sub_value:
+                            # Handle percentiles
+                            for percentile, value in sub_value["values"].items():
+                                metric_values[f"{sub_key}_{percentile}"] = value
+                        else:
+                            # Likely a sub-bucket
+                            sub_agg_keys.append(sub_key)
+                
+                # Add all metrics to the row
+                new_row.update(metric_values)
+                
+                if sub_agg_keys:
+                    # Process sub-bucket aggregations
+                    for sub_key in sub_agg_keys:
+                        sub_value = bucket[sub_key]
                         sub_rows = process_nested_aggs(
                             sub_value,
                             current_path + [sub_key],
                             new_row.copy()
                         )
                         result_rows.extend(sub_rows)
-                
-                if not has_sub_aggs:
+                else:
+                    # No sub-buckets, just add this row
                     result_rows.append(new_row)
     
-    # Handle metric aggregations
+    # Handle the case where we're at a leaf node (metric aggregation)
     elif "value" in agg_data:
         agg_name = current_path[-1] if current_path else "value"
         new_row = current_row.copy()
         new_row[agg_name] = agg_data["value"]
         result_rows.append(new_row)
     
-    # Handle other aggregation types
+    # Handle percentiles
     elif "values" in agg_data:
         agg_name = current_path[-1] if current_path else "percentile"
+        new_row = current_row.copy()
         for percentile, value in agg_data["values"].items():
-            new_row = current_row.copy()
-            new_row[f"{agg_name}_percentile"] = percentile
-            new_row[f"{agg_name}_value"] = value
-            result_rows.append(new_row)
+            new_row[f"{agg_name}_{percentile}"] = value
+        result_rows.append(new_row)
     
     # If we didn't match any specific aggregation type but have a row, return it
     elif current_row:
