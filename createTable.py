@@ -17,7 +17,7 @@ def process_nested_aggs(agg_data, current_path=None, current_row=None):
         current_path = []
     if current_row is None:
         current_row = {}
-        
+            
     result_rows = []
     
     # Get the current aggregation name
@@ -116,7 +116,6 @@ def process_nested_aggs(agg_data, current_path=None, current_row=None):
                     newCurrentPath=[]
                     if len(current_path)>1 or len(sub_agg_keys)>1:
                         newCurrentPath = current_path
-                    # Process sub-bucket aggregations
                     # Process sub-bucket aggregations
                     for sub_key in sub_agg_keys:
                         sub_value = bucket[sub_key]
