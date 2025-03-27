@@ -1,11 +1,15 @@
 # dashBot
-
+You may watch these videos to understand this project
+https://youtu.be/h88zyWlyeYw
+https://youtu.be/nqGwCADlT_0
+https://youtu.be/PJ6V8g9NS6s
 
 upload a csv file into Elasticsearch, get AI to create queries for you
 
 create .env file
 
 index_name = "ben10"
+
 projectsDir = "projects"
 
 path = ${projectsDir}/${index_name}
@@ -14,21 +18,28 @@ csv_file_path = ${path}/"ben10.csv"
 
 
 elasticsearch_username="taken from local elastic"
+
 elasticsearch_password="taken from local elastic"
 
 
 API_KEY = "taken from openrouter"
+
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 
 
 
-
 run elasticsearch in dockerdocker pull docker.elastic.co/elasticsearch/elasticsearch:8.17.3 
+
 docker run --name es01 --net elastic -p 9200:9200 -it -m 1GB docker.elastic.co/elasticsearch/elasticsearch:8.17.3
 start elasticsearch
+
 docker start es01
+
 docker stop es01 
+
+
+
 
 steps 3-4 are optional. Only if you need special mappings
 If you need to delete an index. Just run elasticsearchActions.py
