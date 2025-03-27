@@ -255,8 +255,8 @@ def main():
     
     displayDashboard(st)
 
-    # Generate top 5 queries section
-    st.header("Top 5 Suggested Queries")
+    # Generate top 3 queries section
+    st.header("Top 3 Suggested Queries")
     if st.button("Generate Top Queries"):
         with st.spinner("Generating queries with smartRussell..."):
             top_queries = get_chat_response(
