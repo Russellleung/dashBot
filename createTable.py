@@ -66,7 +66,10 @@ def process_nested_aggs(agg_data, current_path=None, current_row=None):
                 
                 # Add all metrics to the row
                 new_row.update(metric_values)
-                
+                #TODO product decision. To merge the rows, 
+                # you have to collect the sub_rows then call process_nested_aggs on each of the sub_rows
+                # this will multiply the rows with every agg at the same lebel
+                # only at the final subrow do you call result_rows.extend(sub_rows)
                 if sub_agg_keys:
                     newCurrentPath=[]
                     if len(current_path)>1 or len(sub_agg_keys)>1:
