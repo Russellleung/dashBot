@@ -40,6 +40,7 @@ platformdirs==4.3.7
 prompt_toolkit==3.0.50
 protobuf==5.29.4
 psutil==7.0.0
+psycopg2-binary==2.9.10
 ptyprocess==0.7.0
 pure_eval==0.2.3
 pyarrow==19.0.1
@@ -54,6 +55,7 @@ requests==2.32.3
 rpds-py==0.23.1
 six==1.17.0
 smmap==5.0.2
+SQLAlchemy==2.0.40
 stack-data==0.6.3
 streamlit==1.43.2
 tenacity==9.0.0

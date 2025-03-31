@@ -132,6 +132,8 @@ def execute_query(query_body):
         return results
     except Exception as e:
         st.error(f"Elasticsearch query error: {e}")
+        if hasattr(e, "info"):  # Check if the exception has an 'info' attribute
+            st.error(f"Elasticsearch error details: {json.dumps(e.info, indent=2)}") #print formatted error info
         return []
 
 
@@ -314,7 +316,9 @@ def main():
     )
 
     try:
+        print(query_body_text)
         parsed_query = json.loads(query_body_text)
+        print(parsed_query)
         is_valid_json = True
     except json.JSONDecodeError as e:
         st.error(f"Invalid JSON: {str(e)}")
