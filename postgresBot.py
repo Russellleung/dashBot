@@ -9,12 +9,13 @@ import pandas as pd
 import psycopg2
 from psycopg2 import sql
 from sqlalchemy import create_engine
+from sql_formatter.core import format_sql
+
 
 
 from dotenv import dotenv_values
 
 config = dotenv_values(".env")
-# csv_file_paths = config["csv_file_paths"]
 path = config["path"]
 API_KEY = config["API_KEY"]
 API_URL = config["API_URL"]
@@ -25,7 +26,6 @@ db_host = config["database_host"]
 db_port = config["database_port"]
 headers = {"Authorization": f"Bearer {API_KEY}", "Content-Type": "application/json"}
 
-# csv_file_paths = ["customers.csv","orders.csv","products.csv"]
 
 # Title of the app
 st.title("SQLite Database Viewer and Query Executor")
@@ -46,6 +46,8 @@ if "saved_widgets" not in st.session_state:
         
 def save_widget(query_name, query_body):
     """Save a widget to the JSON file"""
+    query_body = format_sql(query_body)
+
     widget = {
         "name": query_name,
         "query": query_body,
@@ -281,6 +283,7 @@ try:
                 for i, (query_name, query_body) in enumerate(st.session_state.custom_queries):
                     with st.expander(f"{query_name}"):
                         # Show the query with option to edit
+                        query_body = format_sql(query_body)
                         edited_query = st.text_area(
                             f"Edit Query",
                             value=query_body,

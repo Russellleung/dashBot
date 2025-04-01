@@ -56,7 +56,10 @@ finally:
 
 
 
-
+def dfMutation(df):
+    if "Order_Date" in df:
+        df['Order_Date'] = pd.to_datetime(df['Order_Date'], format='%m/%d/%Y', errors='coerce').dt.date
+                    
 
 try:
     engine = create_engine(
@@ -80,8 +83,7 @@ try:
                     df.columns = df.columns.str.replace(" ", "_")  # Replace spaces in column names
                     
                     # Format the 'Order_Date' column if it exists
-                    if "Order_Date" in df:
-                        df['Order_Date'] = pd.to_datetime(df['Order_Date'], format='%m/%d/%Y', errors='coerce').dt.date
+                    dfMutation(df)
                     
                     # Save DataFrame to PostgreSQL table
                     df.to_sql(name, connection, if_exists='replace', index=False)  # Options: 'replace', 'append', 'fail'

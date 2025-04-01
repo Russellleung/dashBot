@@ -11,14 +11,11 @@ import requests
 from dotenv import dotenv_values
 
 config = dotenv_values(".env")
-# csv_file_paths = config["csv_file_paths"]
 path = config["path"]
 db_file = config["database_name_sqlite"]
 API_KEY = config["API_KEY"]
 API_URL = config["API_URL"]
 headers = {"Authorization": f"Bearer {API_KEY}", "Content-Type": "application/json"}
-
-csv_file_paths = ["customers.csv","orders.csv","products.csv"]
 
 # Title of the app
 st.title("SQLite Database Viewer and Query Executor")
